@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+
+<div class="row justify-content-center mt-4">
+  <div class="col-md-5">
+    <div class="card shadow-sm border-0 p-4">
+      <h3 class="card-title text-center mb-4 fw-bold text-success">เข้าสู่ระบบ</h3>
+      <form id="loginForm">
+        <div class="mb-3">
+          <label class="form-label">อีเมล</label>
+          <input type="email" id="email" class="form-control" required placeholder="example@mail.com">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">รหัสผ่าน</label>
+          <input type="password" id="password" class="form-control" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-success w-100 py-2 mt-2">เข้าสู่ระบบ</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      localStorage.setItem('token', data.token);
+      alert('เข้าสู่ระบบสำเร็จ');
+      window.location.href = '/';
+    } else {
+      alert(data.message);
+    }
+  });
+</script>
+
+<%- include('partials/footer') %>

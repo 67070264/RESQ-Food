@@ -1,0 +1,79 @@
+<%- include('partials/header') %>
+
+<div class="p-4 mb-4 bg-white rounded shadow-sm text-center">
+  <h1 class="display-6 fw-bold text-success">ช่วยลดขยะอาหาร อิ่มอร่อยในราคาประหยัด</h1>
+  <p class="lead text-secondary">ค้นหาและรับอาหารส่วนเกินคุณภาพดีจากร้านค้าใกล้คุณ</p>
+</div>
+
+<h3 class="mb-3 text-secondary">รายการอาหารส่วนเกินที่พร้อมรับ</h3>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+  <% if (foods.length === 0) { %>
+    <div class="col-12 text-center py-5">
+      <p class="text-muted">ยังไม่มีรายการอาหารส่วนเกินในขณะนี้</p>
+    </div>
+  <% } else { %>
+    <% foods.forEach(food => { %>
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <img src="<%= food.image || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80' %>" class="card-img-top" alt="<%= food.title %>" style="height: 200px; object-fit: cover;">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h5 class="card-title fw-bold text-dark mb-0"><%= food.title %></h5>
+              <span class="badge bg-danger">คงเหลือ <%= food.quantity %> ชิ้น</span>
+            </div>
+            <p class="card-text text-muted small mb-2"><%= food.description || 'ไม่มีรายละเอียดเพิ่มเติม' %></p>
+            <p class="small text-secondary mb-3">
+              📍 ร้าน: <strong><%= food.businessId ? food.businessId.name : 'ร้านค้าทั่วไป' %></strong>
+            </p>
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="text-decoration-line-through text-muted me-1">฿<%= food.originalPrice %></span>
+                <span class="h5 text-success fw-bold mb-0">฿<%= food.discountPrice %></span>
+              </div>
+              <button onclick="orderFood('<%= food._id %>')" class="btn btn-sm btn-outline-success">สั่งซื้อ / รับบริจาค</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  <% } %>
+</div>
+
+<script>
+  async function orderFood(foodId) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อ');
+      window.location.href = '/login';
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          foodId: foodId,
+          type: 'Purchase',
+          quantity: 1
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert('สั่งซื้อสำเร็จแล้ว!');
+        window.location.reload();
+      } else {
+        alert(data.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ');
+      }
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    }
+  }
+</script>
+
+<%- include('partials/footer') %>

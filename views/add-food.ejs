@@ -1,0 +1,80 @@
+<%- include('partials/header') %>
+
+<div class="row justify-content-center mt-3">
+  <div class="col-md-7">
+    <div class="card shadow-sm border-0 p-4">
+      <h3 class="card-title mb-4 fw-bold text-success">ลงรายการอาหารส่วนเกินใหม่</h3>
+      <form id="addFoodForm">
+        <div class="mb-3">
+          <label class="form-label">ชื่อรายการอาหาร</label>
+          <input type="text" id="title" class="form-control" required placeholder="เช่น ขนมปังโฮลวีต">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">รายละเอียดเพิ่มเติม</label>
+          <textarea id="description" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">ราคาเดิม (บาท)</label>
+            <input type="number" id="originalPrice" class="form-control" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">ราคาลดพิเศษ (บาท)</label>
+            <input type="number" id="discountPrice" class="form-control" required>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">จำนวนสต็อก (ชิ้น)</label>
+            <input type="number" id="quantity" class="form-control" value="1" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">วันหมดอายุ</label>
+            <input type="date" id="expiredAt" class="form-control" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-success w-100 py-2 mt-2">บันทึกรายการอาหาร</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('addFoodForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('กรุณาเข้าสู่ระบบในสิทธิ์ร้านค้า (Business) ก่อนทำการลงขายอาหาร');
+      window.location.href = '/login';
+      return;
+    }
+
+    const payload = {
+      title: document.getElementById('title').value,
+      description: document.getElementById('description').value,
+      originalPrice: Number(document.getElementById('originalPrice').value),
+      discountPrice: Number(document.getElementById('discountPrice').value),
+      quantity: Number(document.getElementById('quantity').value),
+      expiredAt: document.getElementById('expiredAt').value
+    };
+
+    const res = await fetch('/api/v1/foods', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert('บันทึกรายการอาหารสำเร็จ!');
+      window.location.href = '/';
+    } else {
+      alert(data.message || 'เกิดข้อผิดพลาด (ตรวจสอบว่าเข้าสู่ระบบด้วย Role Business หรือยัง)');
+    }
+  });
+</script>
+
+<%- include('partials/footer') %>
