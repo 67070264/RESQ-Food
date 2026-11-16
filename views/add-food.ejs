@@ -1,80 +1,143 @@
-<%- include('partials/header') %>
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ลงรายการอาหารส่วนเกิน | RESQ-Food</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
 
-<div class="row justify-content-center mt-3">
-  <div class="col-md-7">
-    <div class="card shadow-sm border-0 p-4">
-      <h3 class="card-title mb-4 fw-bold text-success">ลงรายการอาหารส่วนเกินใหม่</h3>
-      <form id="addFoodForm">
-        <div class="mb-3">
-          <label class="form-label">ชื่อรายการอาหาร</label>
-          <input type="text" id="title" class="form-control" required placeholder="เช่น ขนมปังโฮลวีต">
+  <!-- NAV -->
+  <header class="container nav">
+    <a href="/" class="logo">
+      <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+        <circle cx="18" cy="18" r="18" fill="var(--accent)"/>
+        <path d="M10 18.5l5.5 5.5L26 12.5" fill="none" stroke="#12233F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      RESQ-Food
+    </a>
+    <nav class="nav__links">
+      <a href="/">← กลับหน้าหลัก</a>
+    </nav>
+  </header>
+
+  <main class="container page-wrap">
+    <div class="split-box">
+      <!-- ฝั่งซ้าย: Branding & Info -->
+      <div class="split-box__side">
+        <div>
+          <span class="badge-tag">สำหรับร้านค้าพาร์ทเนอร์</span>
+          <h2>เปลี่ยนอาหารเหลือ<br>ให้เป็นรายได้ทันที</h2>
+          <p>ตั้งราคาพิเศษและจำนวนชุดที่ต้องการส่งต่อ ระบบจะแสดงรายการของคุณให้ผู้ซื้อในพื้นที่เห็นทันที</p>
         </div>
-        <div class="mb-3">
-          <label class="form-label">รายละเอียดเพิ่มเติม</label>
-          <textarea id="description" class="form-control" rows="2"></textarea>
+
+        <div class="preview-pill">
+          <div style="font-size:14px; color:#c5d2e8;">💡 คำแนะนำการตั้งราคา</div>
+          <div style="font-size:16px; font-weight:600;">ลดราคา 40% - 60% จากราคาปกติ</div>
+          <div style="font-size:14px; color:#9fb1ce;">ช่วยให้ปิดการขายได้ไวขึ้นก่อนร้านปิด</div>
         </div>
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label class="form-label">ราคาเดิม (บาท)</label>
-            <input type="number" id="originalPrice" class="form-control" required>
-          </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label">ราคาลดพิเศษ (บาท)</label>
-            <input type="number" id="discountPrice" class="form-control" required>
-          </div>
+      </div>
+
+      <!-- ฝั่งขวา: Form -->
+      <div class="split-box__form">
+        <div class="form-head">
+          <h1>ลงรายการอาหารใหม่</h1>
+          <p>กรอกรายละเอียดชุดอาหารส่วนเกินของวันนี้</p>
         </div>
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label class="form-label">จำนวนสต็อก (ชิ้น)</label>
-            <input type="number" id="quantity" class="form-control" value="1" required>
+
+        <form id="addFoodForm">
+          <div class="form-group">
+            <label for="title">ชื่อชุดอาหาร / เมนู *</label>
+            <input type="text" id="title" class="form-control" required placeholder="เช่น ขนมปังและครัวซองต์ถุงสุ่ม">
           </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label">วันหมดอายุ</label>
-            <input type="date" id="expiredAt" class="form-control" required>
+
+          <div class="form-group">
+            <label for="description">รายละเอียดเพิ่มเติม</label>
+            <textarea id="description" class="form-control" placeholder="ระบุรายละเอียด เช่น อบสดใหม่วันนี้ รับหน้าร้านก่อน 20:30 น."></textarea>
           </div>
-        </div>
-        <button type="submit" class="btn btn-success w-100 py-2 mt-2">บันทึกรายการอาหาร</button>
-      </form>
+
+          <div class="form-group">
+            <label for="image">ลิงก์รูปภาพอาหาร (ถ้ามี)</label>
+            <input type="url" id="image" class="form-control" placeholder="https://example.com/food.jpg">
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="originalPrice">ราคาปกติ (บาท) *</label>
+              <input type="number" id="originalPrice" class="form-control" required min="1" placeholder="180">
+            </div>
+            <div class="form-group">
+              <label for="discountPrice">ราคาลดพิเศษ (บาท) *</label>
+              <input type="number" id="discountPrice" class="form-control" required min="0" placeholder="59">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="quantity">จำนวนที่เปิดจอง (ชุด) *</label>
+              <input type="number" id="quantity" class="form-control" value="3" min="1" required>
+            </div>
+            <div class="form-group">
+              <label for="expiredAt">วันหมดอายุ / วันสุดท้ายที่รับได้ *</label>
+              <input type="date" id="expiredAt" class="form-control" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn--accent btn--lg" style="width:100%; margin-top:8px;">
+            ลงขายรายการอาหารนี้
+          </button>
+        </form>
+      </div>
     </div>
-  </div>
-</div>
+  </main>
 
-<script>
-  document.getElementById('addFoodForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('กรุณาเข้าสู่ระบบในสิทธิ์ร้านค้า (Business) ก่อนทำการลงขายอาหาร');
-      window.location.href = '/login';
-      return;
-    }
+  <script>
+    // ตั้งค่าวันที่เริ่มต้นเป็นวันนี้
+    document.getElementById('expiredAt').valueAsDate = new Date();
 
-    const payload = {
-      title: document.getElementById('title').value,
-      description: document.getElementById('description').value,
-      originalPrice: Number(document.getElementById('originalPrice').value),
-      discountPrice: Number(document.getElementById('discountPrice').value),
-      quantity: Number(document.getElementById('quantity').value),
-      expiredAt: document.getElementById('expiredAt').value
-    };
+    document.getElementById('addFoodForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('กรุณาเข้าสู่ระบบด้วยบัญชีร้านค้า (Business) ก่อนลงรายการอาหาร');
+        window.location.href = '/login';
+        return;
+      }
 
-    const res = await fetch('/api/v1/foods', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
+      const payload = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        image: document.getElementById('image').value || undefined,
+        originalPrice: Number(document.getElementById('originalPrice').value),
+        discountPrice: Number(document.getElementById('discountPrice').value),
+        quantity: Number(document.getElementById('quantity').value),
+        expiredAt: document.getElementById('expiredAt').value
+      };
+
+      try {
+        const res = await fetch('/api/v1/foods', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert('🎉 เพิ่มรายการอาหารสำเร็จ!');
+          window.location.href = '/';
+        } else {
+          alert(data.message || 'ไม่สามารถเพิ่มรายการได้ (ต้องใช้บัญชี Role: Business เท่านั้น)');
+        }
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+      }
     });
-
-    const data = await res.json();
-    if (res.ok) {
-      alert('บันทึกรายการอาหารสำเร็จ!');
-      window.location.href = '/';
-    } else {
-      alert(data.message || 'เกิดข้อผิดพลาด (ตรวจสอบว่าเข้าสู่ระบบด้วย Role Business หรือยัง)');
-    }
-  });
-</script>
-
-<%- include('partials/footer') %>
+  </script>
+</body>
+</html>

@@ -1,79 +1,176 @@
-<%- include('partials/header') %>
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RESQ-Food | อาหารเหลือใกล้คุณ</title>
+  <meta name="description" content="จองอาหารเหลือท้ายวันจากร้านใกล้คุณในราคาที่ถูกลง แล้วไปรับที่ร้าน">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
 
-<div class="p-4 mb-4 bg-white rounded shadow-sm text-center">
-  <h1 class="display-6 fw-bold text-success">ช่วยลดขยะอาหาร อิ่มอร่อยในราคาประหยัด</h1>
-  <p class="lead text-secondary">ค้นหาและรับอาหารส่วนเกินคุณภาพดีจากร้านค้าใกล้คุณ</p>
-</div>
+  <!-- NAV -->
+  <header class="container nav">
+    <a href="/" class="logo">
+      <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+        <circle cx="18" cy="18" r="18" fill="var(--accent)"/>
+        <path d="M10 18.5l5.5 5.5L26 12.5" fill="none" stroke="#12233F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      RESQ-Food
+    </a>
+    <nav aria-label="เมนูหลัก" class="nav__links">
+      <a href="#how">วิธีใช้งาน</a>
+      <a href="#offers">อาหารใกล้คุณ</a>
+      <a href="#shops">สำหรับร้านค้า</a>
+      <a href="#faq">คำถามที่พบบ่อย</a>
+      <!-- ปุ่มเข้าสู่ระบบ / สมัครสมาชิก (เปลี่ยนอัตโนมัติเมื่อ Login แล้ว) -->
+      <span id="authNav" style="display:inline-flex; gap:8px; align-items:center;">
+        <a href="/login">เข้าสู่ระบบ</a>
+        <a href="/register" class="btn btn--dark">สมัครสมาชิก</a>
+      </span>
+    </nav>
+  </header>
 
-<h3 class="mb-3 text-secondary">รายการอาหารส่วนเกินที่พร้อมรับ</h3>
+  <main>
+    <!-- HERO -->
+    <section id="top" class="container hero">
+      <div class="hero__text">
+        <h1>อาหารที่ยังอร่อย<br>อย่าปล่อยให้ลงถังขยะ</h1>
+        <p class="hero__lead">RESQ-Food รวมอาหารเหลือท้ายวันจากร้านใกล้คุณ จองผ่านเว็บในราคาที่ถูกลง แล้วไปรับที่ร้านตามเวลาที่ร้านกำหนด</p>
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
-  <% if (foods.length === 0) { %>
-    <div class="col-12 text-center py-5">
-      <p class="text-muted">ยังไม่มีรายการอาหารส่วนเกินในขณะนี้</p>
-    </div>
-  <% } else { %>
-    <% foods.forEach(food => { %>
-      <div class="col">
-        <div class="card h-100 shadow-sm border-0">
-          <img src="<%= food.image || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80' %>" class="card-img-top" alt="<%= food.title %>" style="height: 200px; object-fit: cover;">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <h5 class="card-title fw-bold text-dark mb-0"><%= food.title %></h5>
-              <span class="badge bg-danger">คงเหลือ <%= food.quantity %> ชิ้น</span>
-            </div>
-            <p class="card-text text-muted small mb-2"><%= food.description || 'ไม่มีรายละเอียดเพิ่มเติม' %></p>
-            <p class="small text-secondary mb-3">
-              📍 ร้าน: <strong><%= food.businessId ? food.businessId.name : 'ร้านค้าทั่วไป' %></strong>
-            </p>
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <span class="text-decoration-line-through text-muted me-1">฿<%= food.originalPrice %></span>
-                <span class="h5 text-success fw-bold mb-0">฿<%= food.discountPrice %></span>
-              </div>
-              <button onclick="orderFood('<%= food._id %>')" class="btn btn-sm btn-outline-success">สั่งซื้อ / รับบริจาค</button>
-            </div>
+        <form class="search" id="searchForm">
+          <div class="search__field">
+            <label for="loc">ตำแหน่งของคุณ</label>
+            <input id="loc" type="text" placeholder="เช่น ลาดกระบัง">
           </div>
+          <div class="search__field">
+            <label for="when">เวลารับอาหาร</label>
+            <select id="when">
+              <option>ตอนนี้</option>
+              <option>วันนี้หลัง 18:00</option>
+              <option>พรุ่งนี้</option>
+            </select>
+          </div>
+          <div class="search__field">
+            <label for="kind">ประเภท</label>
+            <select id="kind">
+              <option value="all">ทั้งหมด</option>
+              <option value="meal">ข้าวกล่อง</option>
+              <option value="bakery">เบเกอรี่</option>
+              <option value="dessert">ขนมหวาน</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn--accent btn--search">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6" fill="none" stroke="#12233F" stroke-width="2"/><path d="M14 14l4 4" stroke="#12233F" stroke-width="2" stroke-linecap="round"/></svg>
+            ค้นหาอาหาร
+          </button>
+        </form>
+      </div>
+
+      <div class="hero__stack">
+        <article class="stack-card stack-card--light">
+          <div class="stack-card__row">
+            <div>
+              <div class="muted">เบเกอรี่ปากซอย · 350 ม.</div>
+              <div class="stack-card__title">ขนมปังและครัวซองต์ถุงสุ่ม</div>
+            </div>
+            <div class="pill">เหลือ 3 ชุด</div>
+          </div>
+          <div class="stack-card__time">รับได้ 19:30–20:30</div>
+          <div class="price"><span class="price__now">฿59</span><span class="price__was">฿180</span></div>
+        </article>
+
+        <article class="stack-card stack-card--dark">
+          <div class="muted muted--light">ข้าวแกงริมทาง · 600 ม.</div>
+          <div class="stack-card__title">ข้าวกล่อง กับข้าว 2 อย่าง</div>
+          <div class="bar"><div class="bar__fill" style="width:35%"></div></div>
+          <div class="bar__label"><span>จองแล้ว 5 จาก 8 ชุด</span><span>ปิดรับ 21:00</span></div>
+          <div class="price price--light"><span class="price__now">฿35</span><span class="price__was">฿70</span></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- HOW -->
+    <section id="how" class="container section">
+      <h2>จองง่าย ๆ ใน 3 ขั้นตอน</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step__num" style="background:var(--mint)">1</div>
+          <h3>เลือกชุดอาหาร</h3>
+          <p>ดูร้านใกล้คุณ ราคา และช่วงเวลารับอาหารของแต่ละชุด</p>
+        </div>
+        <div class="step">
+          <div class="step__num" style="background:var(--peach)">2</div>
+          <h3>จองและชำระเงิน</h3>
+          <p>จ่ายผ่านเว็บ ร้านจะเก็บชุดอาหารไว้ให้คุณ</p>
+        </div>
+        <div class="step">
+          <div class="step__num" style="background:var(--sky)">3</div>
+          <h3>ไปรับที่ร้าน</h3>
+          <p>แสดงรหัสการจองกับร้านภายในเวลาที่เลือก</p>
         </div>
       </div>
-    <% }) %>
-  <% } %>
-</div>
+    </section>
 
-<script>
-  async function orderFood(foodId) {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อ');
-      window.location.href = '/login';
-      return;
-    }
+    <!-- OFFERS (ดึงข้อมูลจริงจาก MongoDB) -->
+    <section id="offers" class="container section">
+      <div class="section__head">
+        <h2>อาหารเหลือวันนี้ใกล้คุณ</h2>
+        <div class="tabs" role="group" aria-label="กรองประเภทอาหาร" id="tabs"></div>
+      </div>
+      <div class="offers" id="offers-list">
+        <p class="muted">กำลังโหลดรายการอาหาร...</p>
+      </div>
+    </section>
 
-    try {
-      const response = await fetch('/api/v1/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          foodId: foodId,
-          type: 'Purchase',
-          quantity: 1
-        })
-      });
+    <!-- SHOPS -->
+    <section id="shops" class="container section">
+      <div class="shops">
+        <div class="shops__text">
+          <h2>เปลี่ยนของเหลือท้ายวัน<br>ให้เป็นรายได้</h2>
+          <ul class="checks">
+            <li>ลงชุดอาหารของวันนี้ได้ในไม่กี่นาที</li>
+            <li>กำหนดจำนวน ราคา และช่วงเวลารับเอง</li>
+            <li>ลูกค้ามารับถึงร้าน ไม่ต้องจัดส่ง</li>
+          </ul>
+          <a href="/add-food" class="btn btn--accent btn--lg">+ ลงรายการอาหารสำหรับร้านค้า</a>
+        </div>
+        <div class="panel">
+          <div class="panel__title">ชุดอาหารของวันนี้</div>
+          <div class="panel__row"><span>ขนมปังถุงสุ่ม</span><strong>เหลือ 3 ชุด</strong></div>
+          <div class="panel__row"><span>เค้กชิ้นพร้อมเครื่องดื่ม</span><strong>จองครบแล้ว</strong></div>
+          <div class="panel__row"><span>แซนด์วิชถุงสุ่ม</span><strong>เหลือ 6 ชุด</strong></div>
+        </div>
+      </div>
+    </section>
 
-      const data = await response.json();
-      if (response.ok) {
-        alert('สั่งซื้อสำเร็จแล้ว!');
-        window.location.reload();
-      } else {
-        alert(data.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ');
-      }
-    } catch (err) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-    }
-  }
-</script>
+    <!-- FAQ -->
+    <section id="faq" class="container section faq">
+      <h2>คำถามที่พบบ่อย</h2>
+      <div class="faq__list" id="faq-list"></div>
+    </section>
 
-<%- include('partials/footer') %>
+    <!-- CTA -->
+    <section id="start" class="container section">
+      <div class="cta">
+        <h2>วันนี้ มีอาหารดี ๆ รอคุณอยู่ใกล้ ๆ</h2>
+        <a href="#offers" class="btn btn--dark btn--lg">ดูอาหารใกล้ฉัน</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <strong>RESQ-Food</strong>
+    <nav aria-label="ลิงก์ท้ายหน้า">
+      <a href="#how">วิธีใช้งาน</a>
+      <a href="#shops">สำหรับร้านค้า</a>
+      <a href="#faq">คำถามที่พบบ่อย</a>
+    </nav>
+    <span>© 2026 RESQ-Food</span>
+  </footer>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>
