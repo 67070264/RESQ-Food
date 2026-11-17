@@ -1,4 +1,3 @@
-
 const BASE_URL = process.env.API_URL || 'http://localhost:5000';
 
 // ฟังก์ชันสำหรับทดสอบ API
@@ -69,6 +68,13 @@ async function runTests() {
       name: 'POST Foods - ต้อง Login ก่อน',
       method: 'POST',
       endpoint: '/api/v1/foods',
+      expected: [401, 403],
+      body: {}
+    },
+    {
+      name: 'POST Orders - จอง/สั่งซื้ออาหารต้อง Login ก่อน',
+      method: 'POST',
+      endpoint: '/api/v1/orders',
       expected: [401, 403],
       body: {}
     }
