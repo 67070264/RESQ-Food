@@ -1,8 +1,13 @@
+// ===== บังคับเข้าหน้า Login ทันทีหากยังไม่มี Token =====
+if (!localStorage.getItem('token')) {
+  window.location.replace('/login');
+}
+
 // ===== ข้อมูลพื้นฐานสำหรับ UI =====
 const TABS = [
-  { id: "all",     label: "ทั้งหมด" },
-  { id: "meal",    label: "ข้าวกล่อง" },
-  { id: "bakery",  label: "เบเกอรี่" },
+  { id: "all", label: "ทั้งหมด" },
+  { id: "meal", label: "ข้าวกล่อง" },
+  { id: "bakery", label: "เบเกอรี่" },
   { id: "dessert", label: "ขนมหวาน" }
 ];
 
@@ -36,7 +41,7 @@ async function fetchFoods() {
   try {
     const res = await fetch('/api/v1/foods');
     const foods = await res.json();
-    
+
     // แปลงข้อมูลจาก MongoDB ให้เข้ากับการ์ดดีไซน์ใหม่
     state.offers = foods.map((f, index) => ({
       id: f._id,
@@ -83,8 +88,8 @@ async function bookFood(foodId) {
 
     const data = await res.json();
     if (res.ok) {
-      alert('🎉 จองอาหารสำเร็จแล้ว! สามารถตรวจสอบประวัติการจองได้ในระบบ');
-      fetchFoods(); // โหลดข้อมูลใหม่เพื่ออัปเดตจำนวนคงเหลือทันที
+      alert('🎉 จองอาหารสำเร็จแล้ว! กำลังพาไปหน้ารายการจองของคุณ');
+      window.location.href = '/my-orders';
     } else {
       alert(data.message || 'ไม่สามารถจองได้ (ตรวจสอบว่าเข้าสู่ระบบด้วยสิทธิ์ Customer หรือ Foundation)');
     }
@@ -114,10 +119,43 @@ function setTab(id) {
   renderOffers();
 }
 
+// ===== จัดการแถบเมนูตามบทบาท (Role) ใน JWT Token =====
+function checkAuthUI() {
+  const token = localStorage.getItem('token');
+  const authNav = document.getElementById('authNav');
+  if (!token || !authNav) return;
+
+  try {
+    // ถอดรหัสส่วน Payload ของ JWT เพื่อดึงค่า role ออกมา
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+    const role = payload.role;
+
+    let roleButton = '';
+    if (role === 'Business') {
+      roleButton = `
+        <a href="/store-orders" style="font-weight:600;">ออเดอร์ของร้าน</a>
+        <a href="/add-food" class="btn btn--accent" style="min-height:40px; padding:0 18px;">+ ลงรายการอาหาร</a>
+      `;
+    } else if (role === 'Customer' || role === 'Foundation') {
+      roleButton = `<a href="/my-orders" class="btn btn--accent" style="min-height:40px; padding:0 18px;">ดูรายการที่จองไว้</a>`;
+    }
+
+    authNav.innerHTML = `
+      ${roleButton}
+      <button type="button" onclick="logout()" class="btn btn--dark" style="min-height:40px; padding:0 18px;">ออกจากระบบ</button>
+    `;
+  } catch (err) {
+    // กรณี Token ผิดรูปแบบ ให้แสดงปุ่มออกจากระบบอย่างเดียว
+    authNav.innerHTML = `<button type="button" onclick="logout()" class="btn btn--dark" style="min-height:40px; padding:0 18px;">ออกจากระบบ</button>`;
+  }
+}
+
 // ===== Offers =====
 function renderOffers() {
   const list = state.offers.filter((o) => state.tab === "all" || o.cat === state.tab);
-  
+
   if (list.length === 0) {
     offersEl.innerHTML = `<p class="muted">ยังไม่มีรายการอาหารเหลือในหมวดหมู่นี้</p>`;
     return;
@@ -126,9 +164,9 @@ function renderOffers() {
   offersEl.innerHTML = list.map((o) => `
     <article class="offer">
       <div class="offer__img" style="background:${o.tint}; overflow:hidden;">
-        ${o.image 
-          ? `<img src="${o.image}" alt="${o.item}" style="width:100%; height:100%; object-fit:cover;">` 
-          : BAG_ICON}
+        ${o.image
+      ? `<img src="${o.image}" alt="${o.item}" style="width:100%; height:100%; object-fit:cover;">`
+      : BAG_ICON}
       </div>
       <div class="offer__body">
         <div class="muted">${o.shop}</div>
@@ -170,17 +208,6 @@ searchForm.addEventListener("submit", (e) => {
   document.getElementById("offers").scrollIntoView({ behavior: "smooth" });
 });
 
-// ===== จัดการแถบเมนูตามสถานะ Login =====
-function checkAuthUI() {
-  const token = localStorage.getItem('token');
-  const authNav = document.getElementById('authNav');
-  if (token && authNav) {
-    authNav.innerHTML = `
-      <a href="/add-food" class="btn btn--accent" style="min-height:40px; padding:0 18px;">+ ลงขายอาหาร</a>
-      <button type="button" onclick="logout()" class="btn btn--dark" style="min-height:40px; padding:0 18px;">ออกจากระบบ</button>
-    `;
-  }
-}
 
 function logout() {
   localStorage.removeItem('token');

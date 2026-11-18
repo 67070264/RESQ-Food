@@ -36,6 +36,10 @@ app.get('/login', (req, res) => {
   res.render('login');
 });
 
+app.get('/my-orders', (req, res) => {
+  res.render('my-orders');
+});
+
 // 3. หน้าสมัครสมาชิก ( Register Page )
 app.get('/register', (req, res) => {
   res.render('register');
@@ -44,6 +48,10 @@ app.get('/register', (req, res) => {
 // 4. หน้าลงรายการอาหาร ( Add Food Page )
 app.get('/add-food', (req, res) => {
   res.render('add-food');
+});
+
+app.get('/store-orders', (req, res) => {
+  res.render('store-orders');
 });
 
 connectDB();
@@ -121,20 +129,26 @@ app.post('/api/v1/auth/login', async (req, res) => {
 // FOODS ENDPOINTS
 // ====================================================
 
-// 3. ลงรายการอาหารใหม่ (เฉพาะ Business) [POST /api/v1/foods]
+// ค้นหา Route POST /api/v1/foods ใน server.js แล้วแก้ให้มี category
 app.post('/api/v1/foods', protect, authorize('Business'), async (req, res) => {
   try {
-    const { title, description, image, originalPrice, discountPrice, quantity, expiredAt } = req.body;
+    const { title, category, description, image, originalPrice, discountPrice, quantity, expiredAt } = req.body;
 
-    const food = new Food({
-      businessId: req.user.id, // ใช้ ID จาก Token โดยตรง
-      title, description, image, originalPrice, discountPrice, quantity, expiredAt, status: 'Available'
+    const newFood = await Food.create({
+      businessId: req.user.id,
+      title,
+      category: category || 'meal', // <-- เพิ่มบรรทัดนี้เข้าไปครับ
+      description,
+      image,
+      originalPrice,
+      discountPrice,
+      quantity,
+      expiredAt
     });
 
-    await food.save();
-    res.status(201).json({ message: 'เพิ่มรายการอาหารสำเร็จ', food });
+    res.status(201).json(newFood);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ message: error.message });
   }
 });
 
@@ -189,10 +203,10 @@ app.post('/api/v1/orders', protect, authorize('Customer', 'Foundation'), async (
     const order = new Order({
       foodId,
       buyerId: req.user.id, // ใช้ ID จาก Token ของผู้สั่งซื้อ
-      type,
+      type: type || 'Purchase',
       quantity,
       totalPrice,
-      snapshot: { foodTitle: food.title, pricePerUnit: food.discountPrice },
+      snapshot: { title: food.title, foodTitle: food.title, pricePerUnit: food.discountPrice },
       pickupStatus: 'Pending'
     });
 
@@ -234,6 +248,30 @@ app.get('/api/v1/orders', protect, authorize('Business'), async (req, res) => {
     res.status(200).json(orders);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// 10. อัปเดตสถานะการมารับอาหาร (เฉพาะ Business) [PATCH /api/v1/orders/:id/status]
+app.patch('/api/v1/orders/:id/status', protect, authorize('Business'), async (req, res) => {
+  try {
+    const { pickupStatus } = req.body;
+    const order = await Order.findById(req.params.id).populate('foodId');
+
+    if (!order) {
+      return res.status(404).json({ message: 'ไม่พบคำสั่งซื้อนี้' });
+    }
+
+    // ตรวจสอบว่าเป็นออเดอร์ของร้านค้าที่ล็อกอินอยู่จริงหรือไม่
+    if (order.foodId && order.foodId.businessId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'ไม่มีสิทธิ์แก้ไขออเดอร์ของร้านอื่น' });
+    }
+
+    order.pickupStatus = pickupStatus;
+    await order.save();
+
+    res.status(200).json({ message: 'อัปเดตสถานะเรียบร้อย', order });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 

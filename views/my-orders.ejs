@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>รายการจองของฉัน | RESQ-Food</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      margin-top: 32px;
+    }
+    .order-card {
+      background: var(--white);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .order-card__top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .status-pill {
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .status--Pending { background: var(--butter); color: #7a5800; }
+    .status--Completed { background: var(--mint); color: #0f5132; }
+    .status--Cancelled { background: var(--peach); color: #842029; }
+    .order-card__title {
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .order-card__meta {
+      font-size: 15px;
+      color: var(--soft);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .order-card__foot {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="container nav">
+    <a href="/" class="logo">
+      <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+        <circle cx="18" cy="18" r="18" fill="var(--accent)"/>
+        <path d="M10 18.5l5.5 5.5L26 12.5" fill="none" stroke="#12233F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      RESQ-Food
+    </a>
+    <nav class="nav__links">
+      <a href="/">← กลับหน้าหลัก</a>
+      <button type="button" onclick="logout()" class="btn btn--dark">ออกจากระบบ</button>
+    </nav>
+  </header>
+
+  <main class="container section" style="padding-top: 24px;">
+    <div class="section__head">
+      <div>
+        <h1>รายการอาหารที่จองไว้</h1>
+        <p class="muted" style="margin-top:6px;">แสดงรหัสคำสั่งซื้อและรายละเอียดสำหรับนำไปรับอาหารที่ร้าน</p>
+      </div>
+      <a href="/#offers" class="btn btn--accent">+ จองอาหารเพิ่ม</a>
+    </div>
+
+    <div id="ordersList" class="orders-grid">
+      <p class="muted">กำลังโหลดประวัติการจองของคุณ...</p>
+    </div>
+  </main>
+
+  <script>
+    async function loadMyOrders() {
+      const token = localStorage.getItem('token');
+      const listEl = document.getElementById('ordersList');
+
+      if (!token) {
+        alert('กรุณาเข้าสู่ระบบก่อนดูรายการจอง');
+        window.location.href = '/login';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/v1/orders/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          listEl.innerHTML = `<p class="muted">${data.message || 'ไม่สามารถดึงข้อมูลได้ (เฉพาะ Role: Customer หรือ Foundation)'}</p>`;
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          listEl.innerHTML = `
+            <div class="order-card" style="grid-column: 1 / -1; text-align:center; padding:48px;">
+              <h3>ยังไม่มีรายการอาหารที่จองไว้</h3>
+              <p class="muted">ลองเลือกดูชุดอาหารเหลือราคาพิเศษใกล้คุณได้เลย</p>
+              <div style="margin-top:12px;">
+                <a href="/#offers" class="btn btn--dark">ไปดูรายการอาหาร</a>
+              </div>
+            </div>`;
+          return;
+        }
+
+        const statusText = {
+          Pending: 'รอไปรับที่ร้าน',
+          Completed: 'รับอาหารแล้ว',
+          Cancelled: 'ยกเลิกแล้ว'
+        };
+
+        listEl.innerHTML = data.map(order => {
+          // ดึงชื่ออาหารจาก snapshot หรือ populate foodId
+          const foodTitle = (order.snapshot && order.snapshot.title) 
+            || (order.foodId && order.foodId.title) 
+            || 'ชุดอาหารส่วนเกิน';
+          
+          const orderDate = new Date(order.createdAt).toLocaleString('th-TH', {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          });
+
+          const shortCode = order._id.slice(-6).toUpperCase();
+          const status = order.pickupStatus || 'Pending';
+
+          return `
+            <article class="order-card">
+              <div class="order-card__top">
+                <span class="muted">รหัสรับของ: <strong style="color:var(--navy);">#${shortCode}</strong></span>
+                <span class="status-pill status--${status}">${statusText[status] || status}</span>
+              </div>
+              <div class="order-card__title">${foodTitle}</div>
+              <div class="order-card__meta">
+                <span>จำนวน: <strong>${order.quantity} ชุด</strong> (${order.type === 'Donation' ? 'รับบริจาค' : 'สั่งซื้อ'})</span>
+                <span>วันที่จอง: ${orderDate}</span>
+              </div>
+              <div class="order-card__foot">
+                <span class="muted">ยอดชำระรวม</span>
+                <span style="font-size:24px; font-weight:700; color:var(--navy);">฿${order.totalPrice}</span>
+              </div>
+            </article>
+          `;
+        }).join('');
+
+      } catch (err) {
+        listEl.innerHTML = `<p class="muted">เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</p>`;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      alert('ออกจากระบบเรียบร้อย');
+      window.location.href = '/';
+    }
+
+    loadMyOrders();
+  </script>
+</body>
+</html>

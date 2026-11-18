@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ออเดอร์ของร้านค้า | RESQ-Food</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px;
+      margin-top: 32px;
+    }
+    .order-card {
+      background: var(--white);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .order-card__top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .status-pill {
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .status--Pending { background: var(--butter); color: #7a5800; }
+    .status--Completed { background: var(--mint); color: #0f5132; }
+    .status--Cancelled { background: var(--peach); color: #842029; }
+    .order-card__title {
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .order-card__meta {
+      font-size: 15px;
+      color: var(--soft);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .order-card__foot {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .action-row {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-sm {
+      flex: 1;
+      min-height: 40px;
+      padding: 0 14px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="container nav">
+    <a href="/" class="logo">
+      <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+        <circle cx="18" cy="18" r="18" fill="var(--accent)"/>
+        <path d="M10 18.5l5.5 5.5L26 12.5" fill="none" stroke="#12233F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      RESQ-Food
+    </a>
+    <nav class="nav__links">
+      <a href="/">← กลับหน้าหลัก</a>
+      <a href="/add-food" class="btn btn--accent">+ ลงรายการอาหาร</a>
+      <button type="button" onclick="logout()" class="btn btn--dark">ออกจากระบบ</button>
+    </nav>
+  </header>
+
+  <main class="container section" style="padding-top: 24px;">
+    <div class="section__head">
+      <div>
+        <h1>จัดการคำสั่งซื้อของร้านค้า</h1>
+        <p class="muted" style="margin-top:6px;">ตรวจสอบรายการที่มีลูกค้าหรือมูลนิธิจองเข้ามา และอัปเดตสถานะเมื่อมารับอาหาร</p>
+      </div>
+    </div>
+
+    <div id="storeOrdersList" class="orders-grid">
+      <p class="muted">กำลังโหลดรายการคำสั่งซื้อของร้านคุณ...</p>
+    </div>
+  </main>
+
+  <script>
+    // ดึงข้อมูลออเดอร์เฉพาะของร้านค้าที่ล็อกอินอยู่ (GET /api/v1/orders)
+    async function loadStoreOrders() {
+      const token = localStorage.getItem('token');
+      const listEl = document.getElementById('storeOrdersList');
+
+      if (!token) {
+        alert('กรุณาเข้าสู่ระบบด้วยบัญชีร้านค้า (Business)');
+        window.location.href = '/login';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/v1/orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          listEl.innerHTML = `<p class="muted">${data.message || 'ไม่สามารถดึงข้อมูลได้ (เฉพาะ Role: Business เท่านั้น)'}</p>`;
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          listEl.innerHTML = `
+            <div class="order-card" style="grid-column: 1 / -1; text-align:center; padding:48px;">
+              <h3>ยังไม่มีรายการจองเข้ามาในร้านของคุณ</h3>
+              <p class="muted">เพิ่มรายการอาหารส่วนเกินเพื่อให้ลูกค้าในพื้นที่เห็นและกดจองได้เลย</p>
+              <div style="margin-top:12px;">
+                <a href="/add-food" class="btn btn--accent">+ ลงรายการอาหารใหม่</a>
+              </div>
+            </div>`;
+          return;
+        }
+
+        const statusText = {
+          Pending: 'รอลูกค้ามารับ',
+          Completed: 'รับอาหารเรียบร้อย',
+          Cancelled: 'ยกเลิกแล้ว'
+        };
+
+        listEl.innerHTML = data.map(order => {
+          const foodTitle = (order.snapshot && order.snapshot.title) 
+            || (order.foodId && order.foodId.title) 
+            || 'ชุดอาหารส่วนเกิน';
+          
+          const buyerName = (order.buyerId && order.buyerId.name) || 'ลูกค้าทั่วไป';
+          const buyerPhone = (order.buyerId && order.buyerId.phone) ? ` (${order.buyerId.phone})` : '';
+
+          const orderDate = new Date(order.createdAt).toLocaleString('th-TH', {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          });
+
+          const shortCode = order._id.slice(-6).toUpperCase();
+          const status = order.pickupStatus || 'Pending';
+
+          // แสดงปุ่มเปลี่ยนสถานะเฉพาะรายการที่ยัง Pending อยู่
+          const actionButtons = status === 'Pending' ? `
+            <div class="action-row">
+              <button type="button" class="btn btn--dark btn-sm" onclick="updateOrderStatus('${order._id}', 'Completed')">
+                ✓ ยืนยันรับอาหารแล้ว
+              </button>
+              <button type="button" class="btn btn-sm" style="background:var(--peach); color:#842029;" onclick="updateOrderStatus('${order._id}', 'Cancelled')">
+                ยกเลิก
+              </button>
+            </div>
+          ` : '';
+
+          return `
+            <article class="order-card">
+              <div class="order-card__top">
+                <span class="muted">รหัสรับของ: <strong style="color:var(--navy);">#${shortCode}</strong></span>
+                <span class="status-pill status--${status}">${statusText[status] || status}</span>
+              </div>
+              <div class="order-card__title">${foodTitle}</div>
+              <div class="order-card__meta">
+                <span>ผู้จอง: <strong>${buyerName}</strong>${buyerPhone}</span>
+                <span>จำนวน: <strong>${order.quantity} ชุด</strong> (${order.type === 'Donation' ? 'ขอรับบริจาค' : 'สั่งซื้อ'})</span>
+                <span>เวลาที่จอง: ${orderDate}</span>
+              </div>
+              <div class="order-card__foot">
+                <div class="price-row">
+                  <span class="muted">ยอดรวม</span>
+                  <span style="font-size:22px; font-weight:700; color:var(--navy);">฿${order.totalPrice}</span>
+                </div>
+                ${actionButtons}
+              </div>
+            </article>
+          `;
+        }).join('');
+
+      } catch (err) {
+        listEl.innerHTML = `<p class="muted">เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</p>`;
+      }
+    }
+
+    // อัปเดตสถานะการมารับอาหาร (PATCH /api/v1/orders/:id/status)
+    async function updateOrderStatus(orderId, newStatus) {
+      const confirmMsg = newStatus === 'Completed' 
+        ? 'ยืนยันว่าลูกค้ามารับอาหารรายการนี้เรียบร้อยแล้ว?' 
+        : 'ต้องการยกเลิกคำสั่งซื้อนี้ใช่หรือไม่?';
+      
+      if (!confirm(confirmMsg)) return;
+
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch(`/api/v1/orders/${orderId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ pickupStatus: newStatus })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert('✅ อัปเดตสถานะเรียบร้อยแล้ว!');
+          loadStoreOrders(); // โหลดรายการใหม่เพื่ออัปเดตป้ายสถานะทันที
+        } else {
+          alert(data.message || 'ไม่สามารถอัปเดตสถานะได้');
+        }
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      alert('ออกจากระบบเรียบร้อย');
+      window.location.href = '/';
+    }
+
+    loadStoreOrders();
+  </script>
+</body>
+</html>
